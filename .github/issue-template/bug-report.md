@@ -20,4 +20,4 @@ What should happen?
 What actually happens?
 
 ## Additional Context
-Add any other relevant information or assumptions.
+Add any other relevant information.
