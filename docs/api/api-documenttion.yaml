@@ -1,0 +1,255 @@
+openapi: 3.0.3
+
+info:
+  title: Conference Room Booking API
+  description: >
+    A RESTful API for managing conference rooms, room availability,
+    and bookings within an organization.
+    This API acts as a formal contract between frontend, backend,
+    and integration teams.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: api-support@conferencebooking.com
+
+servers:
+  - url: https://api.staging.conferencebooking.com/v1
+    description: Staging environment
+  - url: https://api.conferencebooking.com/v1
+    description: Production environment
+
+security:
+  - BearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate user
+      description: Returns a JWT bearer token for authenticated access.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  example: user@company.com
+                password:
+                  type: string
+                  example: password123
+      responses:
+        "200":
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /rooms:
+    get:
+      summary: List all rooms
+      responses:
+        "200":
+          description: List of rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Room"
+
+    post:
+      summary: Create a new room
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Room"
+      responses:
+        "201":
+          description: Room created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+
+  /rooms/{roomId}:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    get:
+      summary: Get room details
+      responses:
+        "200":
+          description: Room details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        "404":
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    delete:
+      summary: Delete a room
+      responses:
+        "204":
+          description: Room deleted
+
+  /availability:
+    get:
+      summary: Check room availability
+      parameters:
+        - name: roomId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Availability result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  available:
+                    type: boolean
+
+  /bookings:
+    get:
+      summary: List all bookings
+      responses:
+        "200":
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+
+    post:
+      summary: Create a booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Booking"
+      responses:
+        "201":
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "409":
+          description: Time slot unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /bookings/{bookingId}:
+    parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    delete:
+      summary: Cancel a booking
+      responses:
+        "204":
+          description: Booking cancelled
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Room:
+      type: object
+      required:
+        - id
+        - name
+        - capacity
+      properties:
+        id:
+          type: string
+          example: room-101
+        name:
+          type: string
+          example: Main Conference Room
+        capacity:
+          type: integer
+          example: 12
+        location:
+          type: string
+          example: Floor 2
+
+    Booking:
+      type: object
+      required:
+        - id
+        - roomId
+        - startTime
+        - endTime
+        - bookedBy
+      properties:
+        id:
+          type: string
+          example: booking-001
+        roomId:
+          type: string
+          example: room-101
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        bookedBy:
+          type: string
+          example: user@company.com
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Resource not found
